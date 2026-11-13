@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum UserRole {
+  superadmin
+  manager
+}
+
+enum BookingStatus {
+  new
+  processing
+  confirmed
+  completed
+  cancelled
+}
+
+enum IntegrationKind {
+  telegram
+  email_admin
+  email_client
+  amocrm
+  cloudinary_cleanup
+}
+
+enum IntegrationStatus {
+  pending
+  processing
+  succeeded
+  failed
+}
+
+model Doctor {
+  id             Int       @id @default(autoincrement())
+  slug           String    @unique
+  name           String
+  position       String
+  specialties    String[]
+  experience     Int
+  photoUrl       String
+  photoPublicId  String?
+  description    String
+  education      String[]
+  certificates   String[]
+  isActive       Boolean   @default(true)
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  bookings       Booking[]
+  services       Service[] @relation("DoctorServices")
+
+  @@index([isActive, deletedAt])
+}
+
+model Service {
+  id               Int       @id @default(autoincrement())
+  slug             String    @unique
+  name             String
+  category         String
+  shortDescription String
+  description      String
+  icon             String
+  treatmentSteps   String[]
+  isActive         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  doctors          Doctor[]  @relation("DoctorServices")
+  prices           Price[]
+  bookings         Booking[]
+
+  @@index([category, isActive])
+}
+
+model Price {
+  id          Int      @id @default(autoincrement())
+  serviceId   Int
+  service     Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  priceFrom   Decimal  @db.Decimal(12, 2)
+  priceTo     Decimal? @db.Decimal(12, 2)
+  unit        String   @default("treatment")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([serviceId, name])
+  @@index([isActive])
+}
+
+model Booking {
+  id             Int                @id @default(autoincrement())
+  publicId       String             @unique @default(cuid())
+  idempotencyKey String             @unique
+  name           String
+  phone          String
+  normalizedPhone String
+  email          String?
+  serviceId      Int?
+  service        Service?           @relation(fields: [serviceId], references: [id])
+  doctorId       Int?
+  doctor         Doctor?            @relation(fields: [doctorId], references: [id])
+  preferDate     DateTime?
+  preferTime     String?
+  comment        String?
+  status         BookingStatus      @default(new)
+  source         String             @default("website")
+  consentAt      DateTime
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  integrations   IntegrationEvent[]
+
+  @@index([status, createdAt])
+  @@index([normalizedPhone])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  author    String
+  rating    Int
+  text      String
+  service   String?
+  doctor    String?
+  isVisible Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([isVisible, createdAt])
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique
+  password  String
+  role      UserRole  @default(manager)
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+model IntegrationEvent {
+  id          Int               @id @default(autoincrement())
+  bookingId   Int?
+  booking     Booking?          @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  kind        IntegrationKind
+  status      IntegrationStatus @default(pending)
+  attempts    Int               @default(0)
+  externalId  String?
+  lastError   String?
+  payload     Json?
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@unique([bookingId, kind])
+  @@index([status, kind])
+}

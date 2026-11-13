@@ -1,0 +1,104 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  --header-height: 82px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  color: #17332f;
+  background: #fbfaf6;
+  font-family: Arial, Helvetica, sans-serif;
+  line-height: 1.6;
+  text-rendering: optimizeLegibility;
+  overflow-wrap: anywhere;
+}
+
+input, select, textarea {
+  min-width: 0;
+  max-width: 100%;
+}
+
+svg {
+  flex-shrink: 0;
+}
+
+/* Grid and flex children must be allowed to shrink around long content. */
+.grid > *, .flex > * {
+  min-width: 0;
+}
+
+@media (max-width: 767px) {
+  input, select, textarea {
+    font-size: 1rem;
+  }
+}
+
+::selection {
+  color: white;
+  background: #1f6b5f;
+}
+
+.container-shell {
+  width: min(1180px, calc(100% - 40px));
+  margin-inline: auto;
+}
+
+.display-title {
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+}
+
+.hero-title {
+  max-width: 13ch;
+  font-size: clamp(2.75rem, 1.5rem + 5vw, 5.5rem);
+  line-height: 1.08;
+}
+
+.hero-copy {
+  max-width: 42ch;
+  text-wrap: pretty;
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #1f6b5f;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.focus-ring {
+  @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal focus-visible:ring-offset-2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+@media (max-width: 767px) {
+  :root {
+    --header-height: 70px;
+  }
+
+  .container-shell {
+    width: min(100% - 28px, 1180px);
+  }
+}

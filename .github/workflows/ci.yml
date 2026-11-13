@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: smilecare
+          POSTGRES_PASSWORD: ci-only-password
+          POSTGRES_DB: smilecare
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U smilecare"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://smilecare:ci-only-password@localhost:5432/smilecare
+      DIRECT_URL: postgresql://smilecare:ci-only-password@localhost:5432/smilecare
+      NEXTAUTH_SECRET: ci-only-secret-not-for-deployment-1234567890
+      NEXTAUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run db:migrate
+      - run: npm run db:seed
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
